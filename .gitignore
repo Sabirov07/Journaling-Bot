@@ -1,0 +1,6 @@
+.env
+venv
+utilities
+OutputPDFs
+.idea
+__pycache__
