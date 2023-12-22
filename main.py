@@ -20,13 +20,21 @@ async def start(update: Update, context: CallbackContext) -> None:
     user_name = update.message.from_user.first_name
     chat_id = update.message.chat_id
 
-    await update.message.reply_text(f"Hi {user_name}! 👋 Welcome to the Task Manager bot!\n"
-                                    f"I can help you manage your daily Journaling.\n\n"
-                                    f"Try:\n"
-                                    f"- /task_manager to work with tasks✅\n"
-                                    f"- /note_manager to write your notes📝\n"
-                                    f"- /habit_manager for your habits🎯\n"
-                                    f"- /end_day to complete your day😌")
+    await update.message.reply_text(f"Hi {user_name}! 👋\n"
+                                    "Welcome to the Journaling bot!\n"
+                                    "I can help you with daily Journaling✨\n\n"
+                                    "Try:\n"
+                                    "- /task_manager to work with tasks✅\n"
+                                    "- /note_manager to write your notes📝\n"
+                                    "- /habit_manager to track habits🎯\n"
+                                    "- /state to set your current location and activities🌍\n")
+    await asyncio.sleep(3)
+    await update.message.reply_text("After you can try: /end_day to complete your day😌\n"
+                                    "And to receive Your Daily Journal✨\n"
+                                    "Similar to this one👇🏿!")
+    await asyncio.sleep(2)
+    sample_pdf = os.path.join(script_directory, 'utilities/sample_journal.pdf')
+    await context.bot.send_document(chat_id=chat_id, document=open(sample_pdf, 'rb'))
 
     quote_manager.get_quote(chat_id)
     # Saving user for daily-quote sending
@@ -46,6 +54,14 @@ async def task_command(update: Update, context: CallbackContext):
 async def habit_command(update: Update, context: CallbackContext):
     text = "Choose an option from the menu:"
     await menu_manager.show_habit_menu(update, context, text)
+
+
+async def set_state(update: Update, context: CallbackContext):
+    chat_id = update.message.chat_id
+    context.user_data[chat_id] = {'state': 'set_state'}
+    await update.message.reply_text(f"Define your current location and activities🌍!"
+                                    f"\n\nFor example:\n"
+                                    f"Russia, Orenburg, Learning IT, Online University Classes")
 
 
 async def message_handler(update: Update, context: CallbackContext):
@@ -93,9 +109,11 @@ async def message_handler(update: Update, context: CallbackContext):
     elif context.user_data.get(chat_id) and context.user_data[chat_id]['state'] == 'delete_habit':
         await habit_manager.handle_delete_habit(update, context)
         return
-
     elif context.user_data.get(chat_id) and context.user_data[chat_id]['state'] == 'day_rating':
         await journal_manager.handle_add_rating(update, context)
+        return
+    elif context.user_data.get(chat_id) and context.user_data[chat_id]['state'] == 'set_state':
+        await journal_manager.add_state(update, context)
         return
     else:
         await update.message.reply_text(f"Do not type yet!\n"
@@ -190,6 +208,7 @@ def main():
     app.add_handler(CommandHandler('task_manager', task_command))
     app.add_handler(CommandHandler('habit_manager', habit_command))
     app.add_handler(CommandHandler('end_day', end_day))
+    app.add_handler(CommandHandler('state', set_state))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     app.add_handler(CallbackQueryHandler(callback_handler))
 
@@ -209,6 +228,7 @@ if __name__ == '__main__':
     load_dotenv()
     TOKEN = os.getenv("BOT_TOKEN")
     DB_URL = os.getenv("DB_URL")
+
     database_manager = DatabaseManager(DB_URL)
     habit_manager = HabitManager(database_manager)
     task_manager = TaskManager(database_manager)
@@ -216,6 +236,8 @@ if __name__ == '__main__':
     quote_manager = QuoteManager(database_manager)
     journal_manager = JournalManager(database_manager)
     menu_manager = MenuManager(note_manager, task_manager, habit_manager)
+
+    script_directory = os.path.dirname(os.path.realpath(__file__))
 
     berlin = arrow.get(datetime.now(), 'local').to('Europe/Berlin')
     next_run = berlin.replace(hour=17, minute=00, second=00, microsecond=0)

@@ -55,7 +55,7 @@ class PDFManager:
                 if 'completed' in task and task['completed']
             ]
             completed_tasks.extend(action_tasks)
-            self.write_down(94, 621, completed_tasks)
+            self.write_down(54, 621, completed_tasks)
 
         user_habits = self.db.get_habits(chat_id)
         if user_habits:
@@ -69,12 +69,17 @@ class PDFManager:
                 if 'completed' in habit and habit['completed']
             ]
             completed_habits.extend(habits_list)
-            self.write_down(94, 165, completed_habits)
+            self.write_down(54, 165, completed_habits)
 
         user_notes = self.db.get_notes(chat_id)
         if user_notes:  # Check if the list is not empty
             note_list = [f"●  {note['content']}    ({note['time']})" for note in user_notes]
-            self.write_down(338, 621, note_list)
+            self.write_down(336, 621, note_list)
+
+        user_quote = self.db.get_quote(chat_id)
+        if user_quote:
+            quote = user_quote[0].get('quote', '')
+            self.insert_quote(336, 165, quote)
 
         user_mood = self.db.get_mood(chat_id)
         if user_mood:
@@ -86,10 +91,10 @@ class PDFManager:
             score = user_rating[0].get('score', '')
             self.insert_score(515, 758, score)
 
-        user_quote = self.db.get_quote(chat_id)
-        if user_quote:
-            quote = user_quote[0].get('quote', '')
-            self.insert_quote(338, 165, quote)
+        user_state = self.db.get_state(chat_id)
+        if user_state:
+            print("Got user state", user_state)
+            self.insert_state(115, 28, user_state)
 
         output_filename = self.locate_inputs(user_name)
         return output_filename
@@ -98,8 +103,8 @@ class PDFManager:
         y_coordinate = y
         for user_input in user_input_list:
             x_coordinate = x
-            if len(user_input) > 33:
-                lines = self.split_note(user_input, max_line_length=32)
+            if len(user_input) > 38:
+                lines = self.split_note(user_input, max_line_length=37)
                 first_line_inserted = False
 
                 for line in lines.splitlines():
@@ -121,6 +126,10 @@ class PDFManager:
     def insert_score(self, x, y, score):
         self.can.setFont("DejaVuSans", 16)
         self.can.drawString(x, y, str(score))
+
+    def insert_state(self, x, y, state):
+        self.can.setFont("DejaVuSans", 10)
+        self.can.drawString(x, y, state)
 
     def insert_quote(self, x, y, quote):
         self.can.setFont("DejaVuSans", 11)

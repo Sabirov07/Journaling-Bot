@@ -33,6 +33,17 @@ class JournalManager:
             await update.message.reply_text("Please enter a NUMBER between 1 and 10.")
             return
 
+    async def pdf_write(self, update: Update, context: CallbackContext):
+        pdf_manager = PDFManager(self.db)
+        chat_id = update.message.chat_id
+        user_name = update.message.from_user.first_name
+
+        output_filename = pdf_manager.pdf_write(chat_id, user_name)
+
+        print("output_filename", output_filename)
+
+        await context.bot.send_document(chat_id=chat_id, document=open(output_filename, 'rb'))
+
     async def insert_commit(self, update: Update, score):
         chat_id = update.message.chat_id
         user_name = update.message.from_user.first_name
@@ -49,11 +60,14 @@ class JournalManager:
             await update.message.reply_text(message, parse_mode='Markdown',
                                             disable_web_page_preview=True)
 
-    async def pdf_write(self, update: Update, context: CallbackContext):
-        pdf_manager = PDFManager(self.db)
+    async def add_state(self, update: Update, context: CallbackContext):
         chat_id = update.message.chat_id
-        user_name = update.message.from_user.first_name
+        state_description = update.message.text.strip().replace('\n', ' ')
 
-        output_filename = pdf_manager.pdf_write(chat_id, user_name)
+        self.db.add_state(chat_id, state_description)
 
-        await context.bot.send_document(chat_id=chat_id, document=open(output_filename, 'rb'))
+        context.user_data[chat_id]['state'] = ''
+        await update.message.reply_text(f"Your temporary state was set!"
+                                        f"\nYou can change it anytime with /state")
+
+

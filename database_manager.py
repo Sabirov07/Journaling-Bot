@@ -236,7 +236,24 @@ class DatabaseManager:
             self.users_collection.insert_one(user_doc)
 
     def update_user(self, chat_id, graph):
-        self.users_collection.find_one_and_update({'chat_id': chat_id}, {'$set': {'user_graph': graph}})
+        self.users_collection.find_one_and_update(
+            {'chat_id': chat_id},
+            {'$set': {'user_graph': graph}},
+            upsert=True)
+
+    def add_state(self, chat_id, state_description):
+        self.users_collection.find_one_and_update(
+            {'chat_id': chat_id},
+            {'$set': {'state': state_description}},
+            upsert=True
+        )
+
+    def get_state(self, chat_id):
+        user = self.users_collection.find_one({'chat_id': chat_id})
+        if user:
+            return user.get('state', '')
+        else:
+            return None
 
     def get_all_users(self):
         result = self.users_collection.find({}, {'chat_id': 1, 'user_name': 1, '_id': 0})
