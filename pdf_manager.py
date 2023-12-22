@@ -93,10 +93,9 @@ class PDFManager:
 
         user_state = self.db.get_state(chat_id)
         if user_state:
-            print("Got user state", user_state)
             self.insert_state(115, 28, user_state)
 
-        output_filename = self.locate_inputs(user_name)
+        output_filename = self.locate_inputs(chat_id, user_name)
         return output_filename
 
     def write_down(self, x, y, user_input_list):
@@ -142,7 +141,7 @@ class PDFManager:
 
         self.can.drawText(text_object)
 
-    def locate_inputs(self, user_name):
+    def locate_inputs(self, chat_id, user_name):
         self.can.setFont("DejaVuSans", 14)
         self.can.drawString(373, 707, datetime.now().strftime("%d / %b / %Y   (%a)"))
 
@@ -158,15 +157,16 @@ class PDFManager:
         page.merge_page(PdfReader(self.packet).pages[0])
         new_pdf.add_page(page)
 
+        # Create a BytesIO object to hold the PDF data
+        pdf_data_buffer = io.BytesIO()
+        new_pdf.write(pdf_data_buffer)
+
         timestamp = datetime.now().strftime("%d_%m_%Y (%M-%S)")
-        output_filename = os.path.join(self.output_folder, f"{user_name} {timestamp}.pdf")
+        filename = f"{user_name} {timestamp}.pdf"
 
-        # Write the output to the new PDF file
-        with open(output_filename, "wb") as output_stream:
-            new_pdf.write(output_stream)
+        # Save the PDF to the database using the new function
+        self.db.save_pdf(chat_id, user_name, pdf_data_buffer.getvalue(), filename)
 
-        print(f"PDF saved as {output_filename}")
-
-        return output_filename
+        return pdf_data_buffer.getvalue(), filename
 
 

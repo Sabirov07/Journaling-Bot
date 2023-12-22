@@ -38,11 +38,12 @@ class JournalManager:
         chat_id = update.message.chat_id
         user_name = update.message.from_user.first_name
 
-        output_filename = pdf_manager.pdf_write(chat_id, user_name)
+        pdf_data, filename = pdf_manager.pdf_write(chat_id, user_name)
 
-        print("output_filename", output_filename)
+        # Send the PDF to the user
+        await context.bot.send_document(chat_id=chat_id, document=pdf_data, filename=filename)
 
-        await context.bot.send_document(chat_id=chat_id, document=open(output_filename, 'rb'))
+        print("PDF sent to user:", user_name)
 
     async def insert_commit(self, update: Update, score):
         chat_id = update.message.chat_id

@@ -33,7 +33,7 @@ async def start(update: Update, context: CallbackContext) -> None:
                                     "And to receive Your Daily Journal✨\n"
                                     "Similar to this one👇🏿!")
     await asyncio.sleep(2)
-    sample_pdf = os.path.join(script_directory, 'utilities/sample_journal.pdf')
+    sample_pdf = os.path.join(script_directory, 'utilities/Sample Journal.pdf')
     await context.bot.send_document(chat_id=chat_id, document=open(sample_pdf, 'rb'))
 
     quote_manager.get_quote(chat_id)

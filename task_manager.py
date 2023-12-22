@@ -16,6 +16,7 @@ class TaskManager:
         task_description = update.message.text.strip()
 
         task_id = self.db.save_task(chat_id, task_description)
+        context.user_data[chat_id]['state'] = ''
         await update.message.reply_text(f"Task №:{task_id} was added!")
 
     async def show_tasks(self, update: Update, context: CallbackContext):
@@ -97,6 +98,7 @@ class TaskManager:
             task_id = int(task_id)
             if self.db.task_exists(chat_id, task_id):
                 self.db.delete_task(chat_id, task_id)
+                context.user_data[chat_id]['state'] = ''
                 await update.message.reply_text(f"The task №:{task_id} has been removed.")
             else:
                 context.user_data[chat_id] = {'state': 'delete_task'}

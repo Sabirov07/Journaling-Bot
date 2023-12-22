@@ -17,6 +17,7 @@ class DatabaseManager:
         self.quotes_collection = self.db['quotes']
         self.graphs_collection = self.db['graphs']
         self.counter_collection = self.db['counters']
+        self.journal_collection = self.db['journals']
         self.ratings_collection = self.db['day_ratings']
 
     @staticmethod
@@ -258,6 +259,31 @@ class DatabaseManager:
     def get_all_users(self):
         result = self.users_collection.find({}, {'chat_id': 1, 'user_name': 1, '_id': 0})
         return result
+
+    def save_pdf(self, chat_id, user_name, pdf_data, filename):
+        date = self.get_current_date()
+
+        # Check if a PDF entry already exists for the user and date
+        existing_pdf = self.journal_collection.find_one({'chat_id': chat_id, 'user_name': user_name, 'timestamp': date})
+
+        if existing_pdf:
+            # Update the existing PDF entry
+            result = self.journal_collection.update_one(
+                {'chat_id': chat_id, 'user_name': user_name, 'timestamp': date},
+                {'$set': {'filename': filename, 'pdf_data': pdf_data}}
+            )
+            print(f"PDF updated in the database for {user_name} at {date} with filename: {filename}")
+        else:
+            # Insert a new PDF entry
+            pdf_document = {
+                'chat_id': chat_id,
+                'user_name': user_name,
+                'filename': filename,
+                'pdf_data': pdf_data,
+                'timestamp': date,
+            }
+            self.journal_collection.insert_one(pdf_document)
+            print(f"PDF saved to the database for {user_name} at {date} with filename: {filename}")
 
     def _get_next_order_id(self, chat_id, collection_name, date=None):
         if date is None:
