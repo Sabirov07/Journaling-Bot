@@ -212,6 +212,7 @@ class DatabaseManager:
         query = {'chat_id': chat_id, 'timestamp': date}
         return list(self.moods_collection.find(query))
 
+
     def save_graph(self, chat_id, user_name, graph, date=None):
         if date is None:
             date = self.get_current_date()
@@ -222,7 +223,7 @@ class DatabaseManager:
             'timestamp': date
         }
         self.graphs_collection.insert_one(graph_doc)
-        self.update_user(chat_id, graph)
+        self.add_graph(chat_id, graph)
 
     def get_graph(self, chat_id):
         return self.graphs_collection.find_one({'chat_id': chat_id}) is not None
@@ -236,7 +237,11 @@ class DatabaseManager:
             }
             self.users_collection.insert_one(user_doc)
 
-    def update_user(self, chat_id, graph):
+    def get_all_users(self):
+        result = self.users_collection.find({}, {'chat_id': 1, 'user_name': 1, '_id': 0})
+        return result
+
+    def add_graph(self, chat_id, graph):
         self.users_collection.find_one_and_update(
             {'chat_id': chat_id},
             {'$set': {'user_graph': graph}},
@@ -256,25 +261,18 @@ class DatabaseManager:
         else:
             return None
 
-    def get_all_users(self):
-        result = self.users_collection.find({}, {'chat_id': 1, 'user_name': 1, '_id': 0})
-        return result
-
     def save_pdf(self, chat_id, user_name, pdf_data, filename):
         date = self.get_current_date()
 
-        # Check if a PDF entry already exists for the user and date
         existing_pdf = self.journal_collection.find_one({'chat_id': chat_id, 'user_name': user_name, 'timestamp': date})
 
         if existing_pdf:
-            # Update the existing PDF entry
-            result = self.journal_collection.update_one(
+            self.journal_collection.update_one(
                 {'chat_id': chat_id, 'user_name': user_name, 'timestamp': date},
                 {'$set': {'filename': filename, 'pdf_data': pdf_data}}
             )
-            print(f"PDF updated in the database for {user_name} at {date} with filename: {filename}")
+            # print(f"PDF updated in the database for {user_name} at {date} with filename: {filename}")
         else:
-            # Insert a new PDF entry
             pdf_document = {
                 'chat_id': chat_id,
                 'user_name': user_name,
@@ -283,7 +281,7 @@ class DatabaseManager:
                 'timestamp': date,
             }
             self.journal_collection.insert_one(pdf_document)
-            print(f"PDF saved to the database for {user_name} at {date} with filename: {filename}")
+            # print(f"PDF saved to the database for {user_name} at {date} with filename: {filename}")
 
     def _get_next_order_id(self, chat_id, collection_name, date=None):
         if date is None:

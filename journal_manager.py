@@ -21,7 +21,7 @@ class JournalManager:
                 await update.message.reply_text("Wait, your Journal PDF is on the way...")
                 self.db.save_rating(chat_id, rating)
                 await self.pdf_write(update, context)
-                await self.insert_commit(update, rating)
+                await self.insert_rating(update, rating)
                 self.db.uncomplete_habits(chat_id)
                 return
             else:
@@ -38,14 +38,14 @@ class JournalManager:
         chat_id = update.message.chat_id
         user_name = update.message.from_user.first_name
 
+        #We extract value of the pdf touple returned by pdf_write
         pdf_data, filename = pdf_manager.pdf_write(chat_id, user_name)
 
-        # Send the PDF to the user
         await context.bot.send_document(chat_id=chat_id, document=pdf_data, filename=filename)
 
         print("PDF sent to user:", user_name)
 
-    async def insert_commit(self, update: Update, score):
+    async def insert_rating(self, update: Update, score):
         chat_id = update.message.chat_id
         user_name = update.message.from_user.first_name
 

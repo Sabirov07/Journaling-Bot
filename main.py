@@ -125,6 +125,8 @@ async def end_day(update: Update, context: CallbackContext):
     chat_id = update.message.chat_id
     await update.message.reply_text("It's the end of the day!\nLet's sum up✍️...")
 
+    await asyncio.sleep(2)
+
     keyboard = [
         [
             InlineKeyboardButton("😎", callback_data="😎"),  # Excited

@@ -72,7 +72,7 @@ class PDFManager:
             self.write_down(54, 165, completed_habits)
 
         user_notes = self.db.get_notes(chat_id)
-        if user_notes:  # Check if the list is not empty
+        if user_notes:
             note_list = [f"●  {note['content']}    ({note['time']})" for note in user_notes]
             self.write_down(336, 621, note_list)
 
@@ -95,6 +95,7 @@ class PDFManager:
         if user_state:
             self.insert_state(115, 28, user_state)
 
+        #we return a tuple containing the PDF data (from pdf_data_buffer.getvalue()) and the filename
         output_filename = self.locate_inputs(chat_id, user_name)
         return output_filename
 
@@ -157,14 +158,12 @@ class PDFManager:
         page.merge_page(PdfReader(self.packet).pages[0])
         new_pdf.add_page(page)
 
-        # Create a BytesIO object to hold the PDF data
         pdf_data_buffer = io.BytesIO()
         new_pdf.write(pdf_data_buffer)
 
         timestamp = datetime.now().strftime("%d_%m_%Y (%M-%S)")
         filename = f"{user_name} {timestamp}.pdf"
 
-        # Save the PDF to the database using the new function
         self.db.save_pdf(chat_id, user_name, pdf_data_buffer.getvalue(), filename)
 
         return pdf_data_buffer.getvalue(), filename
