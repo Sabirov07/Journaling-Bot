@@ -35,40 +35,41 @@ class DatabaseManager:
             'chat_id': chat_id,
             'description': task_description,
             'completed': False,
-            'timestamp': date
+            'date': date
         }
         self.tasks_collection.insert_one(task_doc)
         return order_id
 
     def get_tasks(self, chat_id):
         date = self.get_current_date()
-        return list(self.tasks_collection.find({'chat_id': chat_id, 'timestamp': date}))
+        return list(self.tasks_collection.find({'chat_id': chat_id, 'date': date}))
 
-    def complete_task(self, chat_id, task_id):
-        date = self.get_current_date()
+    def complete_task(self, chat_id, task_id, date=None):
+        if date is None:
+            date = self.get_current_date()
         completion_time = datetime.now().strftime("%H:%M")
         self.tasks_collection.update_one(
-            {'chat_id': chat_id, 'id': task_id, 'timestamp': date},
+            {'chat_id': chat_id, 'id': task_id, 'date': date},
             {'$set': {'completed': True, 'time': completion_time}}
         )
         counter_doc = self.counter_collection.find_one_and_update(
             {"chat_id": chat_id, "date": date},
-            {"$inc": {"completed_tasks_counter": 1}},
+            {"$inc": {"completed_tasks": 1}},
             upsert=True,
             return_document=True,
         )
         if not counter_doc:
-            counter_doc = {"chat_id": chat_id, "date": date, "completed_tasks_counter": 1}
+            counter_doc = {"chat_id": chat_id, "date": date, "completed_tasks": 1}
             self.counter_collection.insert_one(counter_doc)
 
     def delete_task(self, chat_id, task_id):
         date = self.get_current_date()
-        self.tasks_collection.delete_one({'chat_id': chat_id, 'id': task_id, 'timestamp': date})
+        self.tasks_collection.delete_one({'chat_id': chat_id, 'id': task_id, 'date': date})
 
     def task_exists(self, chat_id, task_id):
         date = self.get_current_date()
         return self.tasks_collection.find_one(
-            {'chat_id': chat_id, 'id': task_id, 'timestamp': date}) is not None
+            {'chat_id': chat_id, 'id': task_id, 'date': date}) is not None
 
     ## NOTE DB
     def save_note(self, chat_id, content, date=None):
@@ -81,23 +82,23 @@ class DatabaseManager:
             'chat_id': chat_id,
             'content': content,
             'time': datetime.now().strftime("%H:%M"),
-            'timestamp': date
+            'date': date
         }
         self.notes_collection.insert_one(note_doc, date)
         return order_id
 
     def get_notes(self, chat_id):
         date = self.get_current_date()
-        return list(self.notes_collection.find({'chat_id': chat_id, 'timestamp': date}))
+        return list(self.notes_collection.find({'chat_id': chat_id, 'date': date}))
 
     def delete_note(self, chat_id, note_id):
         current_date = datetime.now().strftime("%d-%m-%Y")
-        self.notes_collection.delete_one({'chat_id': chat_id, 'id': note_id, 'timestamp': current_date})
+        self.notes_collection.delete_one({'chat_id': chat_id, 'id': note_id, 'date': current_date})
 
     def note_exists(self, chat_id, note_id):
         date = self.get_current_date()
         return self.notes_collection.find_one(
-            {'chat_id': chat_id, 'id': note_id, 'timestamp': date}) is not None
+            {'chat_id': chat_id, 'id': note_id, 'date': date}) is not None
 
     ## HABIT DB
     def save_habit(self, chat_id, habit_description, date=None):
@@ -110,20 +111,38 @@ class DatabaseManager:
             'chat_id': chat_id,
             'description': habit_description,
             'completed': False,
-            'timestamp': date
+            'date': date
         }
         self.habits_collection.insert_one(habit_doc)
+
         return order_id
 
     def get_habits(self, chat_id):
         return list(self.habits_collection.find({'chat_id': chat_id}))
 
-    def complete_habit(self, chat_id, habit_id):
+    def complete_habit(self, chat_id, habit_id, date=None):
+        if date is None:
+            date = self.get_current_date()
         completion_time = datetime.now().strftime("%H:%M")
+
+        # Update habit completion in habits_collection
         result = self.habits_collection.update_one(
             {'chat_id': chat_id, 'id': habit_id},
             {'$set': {'completed': True, 'time': completion_time}}
         )
+
+        # Update completed habits counter in counter_collection for the specific date
+        counter_doc = self.counter_collection.find_one_and_update(
+            {"chat_id": chat_id, "date": date},
+            {"$inc": {"completed_habits": 1}},
+            upsert=True,
+            return_document=True,
+        )
+
+        if not counter_doc:
+            counter_doc = {"chat_id": chat_id, "date": date, "completed_habits": 1}
+            self.counter_collection.insert_one(counter_doc)
+
         return result
 
     def uncomplete_habits(self, chat_id):
@@ -143,75 +162,78 @@ class DatabaseManager:
         if date is None:
             date = self.get_current_date()
 
-        existing_quote = self.quotes_collection.find_one({'chat_id': chat_id, 'timestamp': date})
+        existing_quote = self.quotes_collection.find_one({'chat_id': chat_id, 'date': date})
 
         if existing_quote:
-            self.quotes_collection.delete_one({'chat_id': chat_id, 'timestamp': date})
+            self.quotes_collection.delete_one({'chat_id': chat_id, 'date': date})
 
         quote_doc = {
             'chat_id': chat_id,
             'quote': quote,
-            'timestamp': date
+            'date': date
         }
         self.quotes_collection.insert_one(quote_doc)
 
     def get_quote(self, chat_id, date=None):
         if date is None:
             date = self.get_current_date()
-        query = {'chat_id': chat_id, 'timestamp': date}
+        query = {'chat_id': chat_id, 'date': date}
         return list(self.quotes_collection.find(query))
 
     # RATING DB
     def save_rating(self, chat_id, score, date=None):
         if date is None:
             date = self.get_current_date()
-        existing_rating = self.ratings_collection.find_one({'chat_id': chat_id, 'timestamp': date})
+        existing_rating = self.ratings_collection.find_one({'chat_id': chat_id, 'date': date})
 
         if existing_rating:
-            self.ratings_collection.delete_one({'chat_id': chat_id, 'timestamp': date})
-
-        order_id = self._get_next_order_id(chat_id, 'score')
+            self.ratings_collection.delete_one({'chat_id': chat_id, 'date': date})
 
         rating_doc = {
-            'id': order_id,
             'chat_id': chat_id,
             'score': score,
-            'timestamp': date
+            'date': date
         }
         self.ratings_collection.insert_one(rating_doc)
 
     def get_rating(self, chat_id, date=None):
         if date is None:
             date = self.get_current_date()
-        query = {'chat_id': chat_id, 'timestamp': date}
+        query = {'chat_id': chat_id, 'date': date}
         return list(self.ratings_collection.find(query))
 
     #MOOD DB
-    def save_mood(self, chat_id, mood, date=None):
+    def save_mood(self, chat_id, mood, mood_score, date=None):
         if date is None:
             date = self.get_current_date()
 
-        existing_mood = self.moods_collection.find_one({'chat_id': chat_id, 'timestamp': date})
+        existing_mood = self.moods_collection.find_one({'chat_id': chat_id, 'date': date})
 
         if existing_mood:
-            self.moods_collection.delete_one({'chat_id': chat_id, 'timestamp': date})
-
-        order_id = self._get_next_order_id(chat_id, 'mood')
+            self.moods_collection.delete_one({'chat_id': chat_id, 'date': date})
 
         mood_doc = {
-            'id': order_id,
             'chat_id': chat_id,
             'mood': mood,
-            'timestamp': date
+            'date': date
         }
         self.moods_collection.insert_one(mood_doc)
+
+        counter_doc = self.counter_collection.find_one_and_update(
+            {"chat_id": chat_id, "date": date},
+            {"$set": {"mood_score": mood_score}},
+            upsert=True,
+            return_document=True,
+        )
+        if not counter_doc:
+            counter_doc = {"chat_id": chat_id, "mood_score": mood_score, "date": date}
+            self.counter_collection.insert_one(counter_doc)
 
     def get_mood(self, chat_id, date=None):
         if date is None:
             date = self.get_current_date()
-        query = {'chat_id': chat_id, 'timestamp': date}
+        query = {'chat_id': chat_id, 'date': date}
         return list(self.moods_collection.find(query))
-
 
     def save_graph(self, chat_id, user_name, graph, date=None):
         if date is None:
@@ -220,7 +242,7 @@ class DatabaseManager:
             'chat_id': chat_id,
             'user_name': user_name,
             'graph': graph,
-            'timestamp': date
+            'date': date
         }
         self.graphs_collection.insert_one(graph_doc)
         self.add_graph(chat_id, graph)
@@ -264,11 +286,11 @@ class DatabaseManager:
     def save_pdf(self, chat_id, user_name, pdf_data, filename):
         date = self.get_current_date()
 
-        existing_pdf = self.journal_collection.find_one({'chat_id': chat_id, 'user_name': user_name, 'timestamp': date})
+        existing_pdf = self.journal_collection.find_one({'chat_id': chat_id, 'user_name': user_name, 'date': date})
 
         if existing_pdf:
             self.journal_collection.update_one(
-                {'chat_id': chat_id, 'user_name': user_name, 'timestamp': date},
+                {'chat_id': chat_id, 'user_name': user_name, 'date': date},
                 {'$set': {'filename': filename, 'pdf_data': pdf_data}}
             )
             # print(f"PDF updated in the database for {user_name} at {date} with filename: {filename}")
@@ -278,7 +300,7 @@ class DatabaseManager:
                 'user_name': user_name,
                 'filename': filename,
                 'pdf_data': pdf_data,
-                'timestamp': date,
+                'date': date,
             }
             self.journal_collection.insert_one(pdf_document)
             # print(f"PDF saved to the database for {user_name} at {date} with filename: {filename}")
@@ -295,21 +317,21 @@ class DatabaseManager:
         )
 
         if not counter_doc:
-            counter_doc = {"chat_id": chat_id, "date": date, f"{collection_name}_counter": 1}
+            counter_doc = {"chat_id": chat_id, f"{collection_name}_counter": 1, "date": date}
             self.counter_collection.insert_one(counter_doc)
 
         return counter_doc[f"{collection_name}_counter"]
 
     def _get_next_habit_id(self, chat_id):
         counter_doc = self.counter_collection.find_one_and_update(
-            {"chat_id": chat_id},
-            {"$inc": {"habit_counter": 1}},
+            {"chat_id": f"User {chat_id}"},
+            {"$inc": {"user_habits": 1}},
             upsert=True,
             return_document=True,
         )
 
         if not counter_doc:
-            counter_doc = {"chat_id": chat_id, "habit_counter": 1}
+            counter_doc = {"chat_id": f"User {chat_id}", "user_habits": 1}
             self.counter_collection.insert_one(counter_doc)
 
-        return counter_doc["habit_counter"]
+        return counter_doc["user_habits"]

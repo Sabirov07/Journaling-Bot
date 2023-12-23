@@ -169,7 +169,19 @@ async def callback_handler(update: Update, context: CallbackContext) -> None:
     callback_data = query.data
 
     if callback_data in ["😎", "😊", "😐", "😡", "😞", "🤕"]:
-        database_manager.save_mood(chat_id, callback_data)
+        if callback_data == "😎":
+            mood_score = 10
+        elif callback_data == "😊":
+            mood_score = 7
+        elif callback_data == "😐":
+            mood_score = 5
+        elif callback_data == "😞":
+            mood_score = 3
+        elif callback_data == "🤕":
+            mood_score = 2
+        else:
+            mood_score = 0
+        database_manager.save_mood(chat_id, callback_data, mood_score)
         return
     elif callback_data == "no":
         await query.answer("No worries, tomorrow is a new opportunity. You got this💪🏿")
@@ -243,5 +255,10 @@ if __name__ == '__main__':
 
     berlin = arrow.get(datetime.now(), 'local').to('Europe/Berlin')
     next_run = berlin.replace(hour=17, minute=00, second=00, microsecond=0)
+
+    from report_manager import ReportManager
+    report_manager = ReportManager(database_manager)
+    from dummy_data import DummyData
+    dummy_data = DummyData(database_manager)
 
     main()

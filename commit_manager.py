@@ -39,7 +39,7 @@ class CommitManager:
 
         graph_params = {
             "id": converted_name,
-            "name": f"{converted_name.title()}'s Commitment Table",
+            "name": f"{converted_name.title()}'s Satisfaction Over Days",
             "unit": "commit",
             "type": "int",
             "color": "sora"

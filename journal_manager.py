@@ -57,7 +57,7 @@ class JournalManager:
                 self.db.save_graph(chat_id, user_name, graph)
         link = self.commit_manager.insert_data(user_name, score)
         if link:
-            message = f"🔗 [{user_name}'s Commitment Table]({link})."
+            message = f"🔗 [{user_name}'s Satisfaction Table]({link})."
             await update.message.reply_text(message, parse_mode='Markdown',
                                             disable_web_page_preview=True)
 
