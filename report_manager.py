@@ -65,23 +65,27 @@ class ReportManager:
 
                 if total_days > 0:
                     average_mood_score = total_mood_score / total_days
+                    print("User", chat_id)
                     print("total_days", total_days)
                     print("total_mood_score", mood_levels)
                     print("average_mood_score", average_mood_score)
 
-                    if average_mood_score >= 7.5:
-                        feedback = "😄 You had an outstanding week with excellent mood! . Keep spreading the positivity!"
-                    elif average_mood_score >= 5.5:
-                        feedback = "😊 You had a positive week. Keep striving for happiness."
-                    elif average_mood_score >= 3.5:
-                        feedback = "😐 You had average mood. Ups and downs happen. Focus on the positive moments."
-                    elif average_mood_score >= 1.5:
-                        feedback = "😔 Challenging week. Take some time for self-care and reflection."
-                    else:
-                        feedback = "😢 Tough week. Remember to prioritize self-care and seek support if needed."
+                    if average_mood_score > 0.1:
+                        if average_mood_score >= 7.5:
+                            feedback = "😄 You had an outstanding week with excellent mood!\n" \
+                                       "Keep spreading the positivity!"
+                        elif average_mood_score >= 5.5:
+                            feedback = "😊 You had a positive week. Keep striving for happiness."
+                        elif average_mood_score >= 3.5:
+                            feedback = "😐 You had average mood. Ups and downs happen.\n" \
+                                       "Focus on the positive moments."
+                        elif average_mood_score >= 1.5:
+                            feedback = "😔 Challenging week. Take some time for self-care and reflection."
+                        else:
+                            feedback = "😢 Tough week. Remember to prioritize self-care and seek support if needed."
 
-                    report_string = f"Mood Report:\n{feedback}"
-                    return report_string
+                        report_string = f"Mood Report:\n__________________________\n{feedback}"
+                        return report_string
         except Exception as e:
             print(f"Error in generate_mood_report: {e}")
             return None
@@ -139,8 +143,8 @@ class ReportManager:
                     else:
                         feedback = "🚧 No tasks completed yet this week. Time to get started and make progress!"
 
-                    report_string = f"Tasks Report:\nYou completed {total_completed_tasks} tasks out of {total_tasks}" \
-                                    f" tasks this week.\n{feedback}"
+                    report_string = f"Tasks Report:\n__________________________\nYou completed {total_completed_tasks} tasks out of {total_tasks}" \
+                                    f" tasks this week.\n\n{feedback}"
 
                     return report_string
         except Exception as e:
@@ -172,10 +176,10 @@ class ReportManager:
 
                 # Calculate the total number of persistent habits for the week
                 total_persistent_habits = total_habits * total_days
-                print("total_days", total_days)
-                print("total_habits", total_habits)
-                print("total_persistent_habits", total_persistent_habits)
-                print("completed_habits_number", completed_habits_number)
+                # print("total_days", total_days)
+                # print("total_habits", total_habits)
+                # print("total_persistent_habits", total_persistent_habits)
+                # print("completed_habits_number", completed_habits_number)
 
                 return completed_habits_number, total_persistent_habits
         except Exception as e:
@@ -215,11 +219,10 @@ class ReportManager:
                                    "It's time to start and make progress towards your habits!"
 
                     report_string = (
-                        f"Habits Report:\n"
-                        f"Commitment: {commitment_percentage:.2f}%\n"
+                        f"Habits Report:\n__________________________\n"
+                        f"Commitment: {commitment_percentage:.2f}%\n\n"
                         f"You completed {total_completed_habits} commits out of {total_persistent_habits} "
-                        f"possible commits "
-                        f"toward your habits this week.\n"
+                        f"possible commits toward your habits this week.\n"
                         f"\n\n{feedback}"
                     )
 
@@ -259,10 +262,10 @@ class ReportManager:
                 total_days = len(data)
                 total_ratings = sum(data.values())
                 average_rating = total_ratings / total_days if total_days > 0 else 0
-                print(data)
-                print("total_days", total_days)
-                print("total_ratings", total_ratings)
-                print("average_rating", average_rating)
+                # print(data)
+                # print("total_days", total_days)
+                # print("total_ratings", total_ratings)
+                # print("average_rating", average_rating)
 
                 if total_days > 0:
                     # Find the most satisfied day
@@ -285,8 +288,7 @@ class ReportManager:
                                    "Take time for self-care and regroup."
 
                     report_string = (
-                        "Now based on Your Own Daily Ratings we have...\n"
-                        f"Satisfaction Report of the Week:\n"
+                        f"Satisfaction Report of the Week:\n__________________________\n"
                         f"Average satisfaction rating for the week: {average_rating:.2f}\n"
                         f"Most satisfied day: {most_satisfied_day} with a rating of {most_satisfied_rating}\n\n{feedback}"
                     )

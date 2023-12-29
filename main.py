@@ -2,6 +2,7 @@ import telegram
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, CallbackContext
 
+from urllib.parse import quote_plus
 import arrow
 import asyncio
 from datetime import datetime
@@ -11,6 +12,7 @@ from note_manager import NoteManager
 from menu_manager import MenuManager
 from habit_manager import HabitManager
 from quote_manager import QuoteManager
+from report_manager import ReportManager
 from journal_manager import JournalManager
 from database_manager import DatabaseManager
 
@@ -35,6 +37,10 @@ async def start(update: Update, context: CallbackContext) -> None:
     await asyncio.sleep(2)
     sample_pdf = os.path.join(script_directory, 'utilities/Sample Journal.pdf')
     await context.bot.send_document(chat_id=chat_id, document=open(sample_pdf, 'rb'))
+
+    video_file = os.path.join(script_directory, 'utilities/Bot Tutorial.mp4')
+    await context.bot.send_video(chat_id=chat_id, video=open(video_file, 'rb'))
+
 
     quote_manager.get_quote(chat_id)
     # Saving user for daily-quote sending
@@ -213,6 +219,52 @@ async def send_quote(context: CallbackContext):
                 print(f"An error occurred while sending messages to {user['chat_id']}: {e}")
 
 
+async def send_report(context: CallbackContext):
+    users = database_manager.get_all_users()
+
+    if users:
+        print('Sending quotes...')
+        for user in users:
+            try:
+                await context.bot.send_message(chat_id=user['chat_id'], text="Hi, it's Sunday! 🌞\n"
+                                                                             "Here is your Weekly Report:")
+
+                mood_report = report_manager.generate_mood_report(user['chat_id'])
+                if mood_report:
+                    await asyncio.sleep(1)
+                    await context.bot.send_message(chat_id=user['chat_id'], text=mood_report)
+                tasks_report = report_manager.generate_tasks_report(user['chat_id'])
+                if tasks_report:
+                    await asyncio.sleep(1)
+                    await context.bot.send_message(chat_id=user['chat_id'], text=tasks_report)
+                habits_report = report_manager.generate_habits_report(user['chat_id'])
+                if habits_report:
+                    await asyncio.sleep(1)
+                    await context.bot.send_message(chat_id=user['chat_id'], text=habits_report)
+                satisfaction_report = report_manager.generate_satisfaction_report(user['chat_id'])
+                if satisfaction_report:
+                    await asyncio.sleep(1)
+                    await context.bot.send_message(chat_id=user['chat_id'],
+                                                   text="Now based on Your Own Daily Ratings we have🤩...")
+                    await asyncio.sleep(1)
+                    await context.bot.send_message(chat_id=user['chat_id'], text=satisfaction_report)
+                else:
+                    await context.bot.send_message(chat_id=user['chat_id'],
+                                                   text="You do not have enough data 😞")
+                    await asyncio.sleep(1)
+                    await context.bot.send_message(chat_id=user['chat_id'],
+                                                   text="Please try using the bot more often\n"
+                                                        "To get weekly reports on your weekly:\n"
+                                                        "● Mood levels 😊\n"
+                                                        "● Tasks 📋\n"
+                                                        "● Habits 🌱\n\n"
+                                                        "Try /start to get started! 🤠")
+
+            except telegram.error.Forbidden as e:
+                print(f"Could not send message to chat_id {user['chat_id']}. Forbidden: {e}")
+            except Exception as e:
+                print(f"An error occurred while sending messages to {user['chat_id']}: {e}")
+
 def main():
     print('Starting bot...')
     app = Application.builder().token(TOKEN).build()
@@ -223,13 +275,16 @@ def main():
     app.add_handler(CommandHandler('habit_manager', habit_command))
     app.add_handler(CommandHandler('end_day', end_day))
     app.add_handler(CommandHandler('state', set_state))
+    # app.add_handler(CommandHandler('report', send_report))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     app.add_handler(CallbackQueryHandler(callback_handler))
 
     print("Current time in Berlin:", berlin.format('YYYY-MM-DD HH:mm:ss'))
     job_queue = app.job_queue
-    job_queue.run_daily(send_quote, time=next_run, days=(0, 1, 2, 3, 4, 5, 6))
-    print("Quote scheduled runs at:", next_run.format('YYYY-MM-DD HH:mm:ss'))
+    job_queue.run_daily(send_quote, time=quote_time, days=(0, 1, 2, 3, 4, 5, 6))
+    job_queue.run_daily(send_report, time=report_time, days=(0, 1, 2, 3, 4, 5, 6))
+    # job_queue.run_weekly(send_report, when=report_time, weekday=6)
+    # print("Quote scheduled runs at:", quote_time.format('YYYY-MM-DD HH:mm:ss'))
 
     print('Polling...')
     app.run_polling()
@@ -242,23 +297,26 @@ if __name__ == '__main__':
     load_dotenv()
     TOKEN = os.getenv("BOT_TOKEN")
     DB_URL = os.getenv("DB_URL")
+    username = "user2000"
+    password = "shax2000"
 
-    database_manager = DatabaseManager(DB_URL)
+    # Construct the connection string
+    connection_string = f"mongodb+srv://{username}:{password}@cluster0.vn5v3ng.mongodb.net/?retryWrites=true&w=majority"
+
+    database_manager = DatabaseManager(connection_string)
     habit_manager = HabitManager(database_manager)
     task_manager = TaskManager(database_manager)
     note_manager = NoteManager(database_manager)
     quote_manager = QuoteManager(database_manager)
+    report_manager = ReportManager(database_manager)
     journal_manager = JournalManager(database_manager)
     menu_manager = MenuManager(note_manager, task_manager, habit_manager)
 
     script_directory = os.path.dirname(os.path.realpath(__file__))
 
     berlin = arrow.get(datetime.now(), 'local').to('Europe/Berlin')
-    next_run = berlin.replace(hour=17, minute=00, second=00, microsecond=0)
-
-    from report_manager import ReportManager
-    report_manager = ReportManager(database_manager)
-    from dummy_data import DummyData
-    dummy_data = DummyData(database_manager)
+    quote_time = berlin.replace(hour=14, minute=23, second=00, microsecond=0)
+    reminder_time = berlin.replace(hour=14, minute=23, second=00, microsecond=0)
+    report_time = berlin.replace(hour=13, minute=28, second=0, microsecond=0)
 
     main()

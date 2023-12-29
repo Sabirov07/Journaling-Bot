@@ -5,7 +5,7 @@ from datetime import datetime
 class DatabaseManager:
 
     def __init__(self, db_url):
-        self.client = MongoClient(db_url)
+        self.client = MongoClient(db_url, serverSelectionTimeoutMS=10000)
         self.db = self.client['journalDB']
 
         # Collections
@@ -335,3 +335,8 @@ class DatabaseManager:
             self.counter_collection.insert_one(counter_doc)
 
         return counter_doc["user_habits"]
+
+#
+# db_manager = DatabaseManager("mongodb+srv://shax:shax424@cluster0.vn5v3ng.mongodb.net/?retryWrites=true&w=majority")
+#
+# db_manager.establish_connection("mongodb+srv://shax:shax424@cluster0.vn5v3ng.mongodb.net/?retryWrites=true&w=majority")
