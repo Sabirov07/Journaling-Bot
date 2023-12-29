@@ -41,7 +41,6 @@ async def start(update: Update, context: CallbackContext) -> None:
     video_file = os.path.join(script_directory, 'utilities/Bot Tutorial.mp4')
     await context.bot.send_video(chat_id=chat_id, video=open(video_file, 'rb'))
 
-
     quote_manager.get_quote(chat_id)
     # Saving user for daily-quote sending
     database_manager.save_user(chat_id, user_name)
@@ -206,7 +205,7 @@ async def send_quote(context: CallbackContext):
     users = database_manager.get_all_users()
 
     if users:
-        print('Sending quotes...')
+        print('Sending Quotes...')
         for user in users:
             try:
                 quote = quote_manager.get_quote(user['chat_id'])
@@ -214,56 +213,78 @@ async def send_quote(context: CallbackContext):
                 await context.bot.send_message(chat_id=user['chat_id'], text=quote)
 
             except telegram.error.Forbidden as e:
-                print(f"Could not send message to chat_id {user['chat_id']}. Forbidden: {e}")
+                print(f"Could not send quote to chat_id {user['chat_id']}. Forbidden: {e}")
             except Exception as e:
-                print(f"An error occurred while sending messages to {user['chat_id']}: {e}")
+                print(f"An error occurred while sending quotes to {user['chat_id']}: {e}")
 
 
-async def send_report(context: CallbackContext):
+async def send_reminder(context: CallbackContext):
     users = database_manager.get_all_users()
 
     if users:
-        print('Sending quotes...')
+        print('Sending Reminders...')
         for user in users:
             try:
-                await context.bot.send_message(chat_id=user['chat_id'], text="Hi, it's Sunday! 🌞\n"
-                                                                             "Here is your Weekly Report:")
-
-                mood_report = report_manager.generate_mood_report(user['chat_id'])
-                if mood_report:
-                    await asyncio.sleep(1)
-                    await context.bot.send_message(chat_id=user['chat_id'], text=mood_report)
-                tasks_report = report_manager.generate_tasks_report(user['chat_id'])
-                if tasks_report:
-                    await asyncio.sleep(1)
-                    await context.bot.send_message(chat_id=user['chat_id'], text=tasks_report)
-                habits_report = report_manager.generate_habits_report(user['chat_id'])
-                if habits_report:
-                    await asyncio.sleep(1)
-                    await context.bot.send_message(chat_id=user['chat_id'], text=habits_report)
-                satisfaction_report = report_manager.generate_satisfaction_report(user['chat_id'])
-                if satisfaction_report:
-                    await asyncio.sleep(1)
-                    await context.bot.send_message(chat_id=user['chat_id'],
-                                                   text="Now based on Your Own Daily Ratings we have🤩...")
-                    await asyncio.sleep(1)
-                    await context.bot.send_message(chat_id=user['chat_id'], text=satisfaction_report)
-                else:
-                    await context.bot.send_message(chat_id=user['chat_id'],
-                                                   text="You do not have enough data 😞")
-                    await asyncio.sleep(1)
-                    await context.bot.send_message(chat_id=user['chat_id'],
-                                                   text="Please try using the bot more often\n"
-                                                        "To get weekly reports on your weekly:\n"
-                                                        "● Mood levels 😊\n"
-                                                        "● Tasks 📋\n"
-                                                        "● Habits 🌱\n\n"
-                                                        "Try /start to get started! 🤠")
+                await context.bot.send_message(chat_id=user['chat_id'],
+                                               text="🌟 Reminder:\n"
+                                               "⏳ Only 30 minutes left to wrap up your day's activities!\n\n"
+                                               "After use /end_day to receive your Journal of the day! ✨")
 
             except telegram.error.Forbidden as e:
-                print(f"Could not send message to chat_id {user['chat_id']}. Forbidden: {e}")
+                print(f"Could not send reminder to chat_id {user['chat_id']}. Forbidden: {e}")
             except Exception as e:
-                print(f"An error occurred while sending messages to {user['chat_id']}: {e}")
+                print(f"An error occurred while sending reminder to {user['chat_id']}: {e}")
+
+
+async def send_report(context: CallbackContext):
+    # Check if today is Friday (weekday 4, assuming Monday is 0 and Sunday is 6)
+    if datetime.now().weekday() == 4:
+        users = database_manager.get_all_users()
+
+        if users:
+            print('Sending Reports...')
+            for user in users:
+                try:
+                    await context.bot.send_message(chat_id=user['chat_id'], text="Hi, it's Friday! 🌞\n"
+                                                                                 "Here is your Weekly Report:")
+
+                    mood_report = report_manager.generate_mood_report(user['chat_id'])
+                    if mood_report:
+                        await asyncio.sleep(1)
+                        await context.bot.send_message(chat_id=user['chat_id'], text=mood_report)
+                    tasks_report = report_manager.generate_tasks_report(user['chat_id'])
+                    if tasks_report:
+                        await asyncio.sleep(1)
+                        await context.bot.send_message(chat_id=user['chat_id'], text=tasks_report)
+                    habits_report = report_manager.generate_habits_report(user['chat_id'])
+                    if habits_report:
+                        await asyncio.sleep(1)
+                        await context.bot.send_message(chat_id=user['chat_id'], text=habits_report)
+                    satisfaction_report = report_manager.generate_satisfaction_report(user['chat_id'])
+                    if satisfaction_report:
+                        await asyncio.sleep(1)
+                        await context.bot.send_message(chat_id=user['chat_id'],
+                                                       text="Now based on Your Own Daily Ratings we have🤩...")
+                        await asyncio.sleep(1)
+                        await context.bot.send_message(chat_id=user['chat_id'], text=satisfaction_report)
+                    else:
+                        await context.bot.send_message(chat_id=user['chat_id'],
+                                                       text="You do not have enough data 😞")
+                        await asyncio.sleep(1)
+                        await context.bot.send_message(chat_id=user['chat_id'],
+                                                       text="Please try using the bot more often\n"
+                                                            "To get weekly reports on your weekly:\n"
+                                                            "● Mood levels 😊\n"
+                                                            "● Tasks 📋\n"
+                                                            "● Habits 🌱\n\n"
+                                                            "Try /start to get started! 🤠")
+
+                except telegram.error.Forbidden as e:
+                    print(f"Could not send message to chat_id {user['chat_id']}. Forbidden: {e}")
+                except Exception as e:
+                    print(f"An error occurred while sending messages to {user['chat_id']}: {e}")
+    else:
+        print("It's not Friday. No reports will be sent today.")
 
 def main():
     print('Starting bot...')
@@ -282,9 +303,8 @@ def main():
     print("Current time in Berlin:", berlin.format('YYYY-MM-DD HH:mm:ss'))
     job_queue = app.job_queue
     job_queue.run_daily(send_quote, time=quote_time, days=(0, 1, 2, 3, 4, 5, 6))
-    job_queue.run_daily(send_report, time=report_time, days=(0, 1, 2, 3, 4, 5, 6))
-    # job_queue.run_weekly(send_report, when=report_time, weekday=6)
-    # print("Quote scheduled runs at:", quote_time.format('YYYY-MM-DD HH:mm:ss'))
+    job_queue.run_daily(send_reminder, time=reminder_time, days=(0, 1, 2, 3, 4, 5, 6))
+    job_queue.run_repeating(send_report, interval=86400)
 
     print('Polling...')
     app.run_polling()
@@ -315,8 +335,7 @@ if __name__ == '__main__':
     script_directory = os.path.dirname(os.path.realpath(__file__))
 
     berlin = arrow.get(datetime.now(), 'local').to('Europe/Berlin')
-    quote_time = berlin.replace(hour=14, minute=23, second=00, microsecond=0)
-    reminder_time = berlin.replace(hour=14, minute=23, second=00, microsecond=0)
-    report_time = berlin.replace(hour=13, minute=28, second=0, microsecond=0)
+    quote_time = berlin.replace(hour=17, minute=23, second=00, microsecond=0)
+    reminder_time = berlin.replace(hour=17, minute=23, second=00, microsecond=0)
 
     main()
