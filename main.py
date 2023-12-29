@@ -237,7 +237,6 @@ async def send_reminder(context: CallbackContext):
 
 
 async def send_report(context: CallbackContext):
-    # Check if today is Friday (weekday 4, assuming Monday is 0 and Sunday is 6)
     if datetime.now().weekday() == 4:
         users = database_manager.get_all_users()
 
@@ -296,7 +295,6 @@ def main():
     app.add_handler(CommandHandler('habit_manager', habit_command))
     app.add_handler(CommandHandler('end_day', end_day))
     app.add_handler(CommandHandler('state', set_state))
-    # app.add_handler(CommandHandler('report', send_report))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     app.add_handler(CallbackQueryHandler(callback_handler))
 
@@ -317,10 +315,9 @@ if __name__ == '__main__':
     load_dotenv()
     TOKEN = os.getenv("BOT_TOKEN")
     DB_URL = os.getenv("DB_URL")
-    username = "user2000"
-    password = "shax2000"
+    username = os.getenv("DB_USERNAME")
+    password = os.getenv("DB_PASSWORD")
 
-    # Construct the connection string
     connection_string = f"mongodb+srv://{username}:{password}@cluster0.vn5v3ng.mongodb.net/?retryWrites=true&w=majority"
 
     database_manager = DatabaseManager(connection_string)
